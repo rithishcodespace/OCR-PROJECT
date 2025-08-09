@@ -3,6 +3,8 @@ const express = require("express");
 const app = express();
 const PORT = process.env.PORT || 5050;
 const multer = require("multer");
+const tesseract = require("tesseract.js")
+
 app.use(express.json());
 
 const storage = multer.diskStorage({
@@ -17,24 +19,19 @@ const storage = multer.diskStorage({
 const upload = multer({storage: storage})
 
 app.post('/api/upload', upload.single('uploadedImage'), (req, res) => {
-    if (!req.file) {
-        console.log("no file")
-        return res.status(400).json({ error: 'No file uploaded' });
-    }
-    console.log(req.file);
-    res.json({
-        message: 'File uploaded successfully',
-        file: req.file
-    });
+   try{
+     tesseract.recognize(
+        'uploads/'+req.file.filename,
+        'eng',
+        {logger:m => console.log(m)}
+     ).then(({data:{text}}) => {
+        return res.json(text)
+     })
+   }
+   catch(error){
+    console.log(error);
+   }
     
 });
-
-
-
-app.get("/", (req, res) => {
-    res.send("Server is running! Use POST /api/upload to upload a file.");
-});
-
-
 
 app.listen(PORT,() => console.log("server listening on http://localhost:5050"))
